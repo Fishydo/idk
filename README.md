@@ -4,7 +4,6 @@ A minimal Express + Service Worker project that supports:
 
 - Persistent VAPID keys via environment variables.
 - Background push delivery (works with tab closed/minimized after subscription).
-- Controlled repeated sends (`count`, `intervalMs`) with per-notification random `nonce` + URL.
 - Subscription persistence in `subscriptions.json`.
 
 ## Setup

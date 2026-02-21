@@ -151,6 +151,7 @@ app.post('/api/send', async (req, res) => {
   const sent = [];
   for (let i = 0; i < safeCount; i += 1) {
     const nonce = crypto.randomUUID();
+
     const payload = JSON.stringify({
       title,
       body: message,
@@ -158,7 +159,7 @@ app.post('/api/send', async (req, res) => {
       sentAt: new Date().toISOString(),
       index: i + 1,
       total: safeCount,
-      url: `https://example.local/notify/${nonce}`
+
     });
 
     // eslint-disable-next-line no-await-in-loop
@@ -166,7 +167,6 @@ app.post('/api/send', async (req, res) => {
       subscriptions.map((subscription) => webpush.sendNotification(subscription, payload))
     );
 
-    sent.push({ index: i + 1, nonce });
 
     if (i < safeCount - 1) {
       // eslint-disable-next-line no-await-in-loop
