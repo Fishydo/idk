@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reliable Web Push Demo</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; max-width: 720px; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+      label { display:block; margin: .5rem 0 .2rem; }
+      input, textarea, button { width:100%; padding:.6rem; margin-bottom:.5rem; }
+      button { cursor: pointer; }
+      #status { white-space: pre-wrap; background: #f8f8f8; padding: .8rem; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Reliable Push Notification Sender</h1>
+    <p>Works in background via Service Worker after permission + subscription.</p>
+
+    <div class="card">
+      <button id="enablePush">Enable notifications</button>
+      <div id="subStatus"></div>
+    </div>
+
+    <div class="card">
+      <label for="title">Title</label>
+      <input id="title" value="Reliable Push" />
+
+      <label for="message">Message</label>
+      <textarea id="message">Hello from background push!</textarea>
+
+      <label for="count">How many sends</label>
+      <input id="count" type="number" min="1" value="3" />
+
+      <label for="intervalMs">Interval (ms)</label>
+      <input id="intervalMs" type="number" min="100" value="1000" />
+
+      <button id="send">Send push batch</button>
+    </div>
+
+    <pre id="status"></pre>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
