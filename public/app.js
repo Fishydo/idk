@@ -3,6 +3,57 @@ const sendButton = document.getElementById('send');
 const status = document.getElementById('status');
 const subStatus = document.getElementById('subStatus');
 
+const adminButton = document.getElementById('adminMode');
+const spamCommandInput = document.getElementById('spamCommand');
+const runSpamCommandButton = document.getElementById('runSpamCommand');
+let isAdminMode = false;
+
+function setStatus(message) {
+  status.textContent = message;
+}
+
+function parseSpamCommand(rawCommand) {
+  const command = String(rawCommand || '').trim();
+  const match = command.match(/^\/spam\s+time:(\d+)\s+title:(.+?)\s+message:(.+)$/i);
+  if (!match) {
+    throw new Error('Invalid command. Use: /spam time:{number} title:{set} message:{set}');
+  }
+
+  const intervalMs = Number(match[1]);
+  const title = match[2].trim();
+  const message = match[3].trim();
+
+  if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
+    throw new Error('Invalid time value. time must be a number greater than 0.');
+  }
+
+  if (!title || !message) {
+    throw new Error('Both title and message are required.');
+  }
+
+  return { intervalMs, title, message };
+}
+
+async function runSpamCommand() {
+  if (!isAdminMode) {
+    throw new Error('Admin mode is required to use /spam.');
+  }
+
+  const { intervalMs, title, message } = parseSpamCommand(spamCommandInput.value);
+  const response = await fetch('/api/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, message, count: 5, intervalMs })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Spam command failed');
+  }
+
+  setStatus(JSON.stringify({ command: '/spam', ...data }, null, 2));
+}
+
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -69,15 +120,15 @@ async function sendBatch() {
     throw new Error(data.error || 'Send failed');
   }
 
-  status.textContent = JSON.stringify(data, null, 2);
+  setStatus(JSON.stringify(data, null, 2));
 }
 
 enableButton.addEventListener('click', async () => {
   try {
     await registerAndSubscribe();
-    status.textContent = 'Push enabled successfully.';
+    setStatus('Push enabled successfully.');
   } catch (error) {
-    status.textContent = error.message;
+    setStatus(error.message);
   }
 });
 
@@ -85,6 +136,21 @@ sendButton.addEventListener('click', async () => {
   try {
     await sendBatch();
   } catch (error) {
-    status.textContent = error.message;
+    setStatus(error.message);
+  }
+});
+
+
+adminButton.addEventListener('click', () => {
+  isAdminMode = !isAdminMode;
+  adminButton.textContent = isAdminMode ? 'Disable admin mode' : 'Enable admin mode';
+  setStatus(isAdminMode ? 'Admin mode enabled.' : 'Admin mode disabled.');
+});
+
+runSpamCommandButton.addEventListener('click', async () => {
+  try {
+    await runSpamCommand();
+  } catch (error) {
+    setStatus(error.message);
   }
 });
