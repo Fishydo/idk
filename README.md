@@ -16,7 +16,34 @@ node scripts/generate-vapid-keys.js
 
 Copy `.env.example` to `.env` and paste generated values.
 
-> Note: This project logs VAPID keys at startup because you explicitly requested that behavior.
+## VAPID env options
+
+You can configure keys either way:
+
+1. Separate env vars:
+
+```env
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+```
+
+2. Single env var:
+
+```env
+VAPID_KEYS={"publicKey":"...","privateKey":"..."}
+```
+
+or:
+
+```env
+VAPID_KEYS=publicKey:privateKey
+```
+
+At startup, the server logs:
+
+- key source
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
 
 ## Run
 

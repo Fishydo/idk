@@ -15,23 +15,71 @@ const app = express();
 
 const PORT = Number(process.env.PORT || 3000);
 const CONTACT_EMAIL = process.env.VAPID_CONTACT_EMAIL || 'mailto:admin@example.com';
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const MAX_SPAM_COUNT = Number(process.env.MAX_SEND_COUNT || 20);
 const DEFAULT_INTERVAL_MS = Number(process.env.DEFAULT_INTERVAL_MS || 1000);
 const subscriptionsPath = path.join(__dirname, 'subscriptions.json');
 
-if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-  console.error('[push] Missing VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY in environment.');
+function resolveVapidKeys() {
+  const directPublic = process.env.VAPID_PUBLIC_KEY?.trim();
+  const directPrivate = process.env.VAPID_PRIVATE_KEY?.trim();
+
+  if (directPublic && directPrivate) {
+    return {
+      source: 'VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY',
+      publicKey: directPublic,
+      privateKey: directPrivate
+    };
+  }
+
+  const bundled = process.env.VAPID_KEYS?.trim();
+  if (!bundled) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(bundled);
+    const publicKey = parsed?.publicKey?.trim();
+    const privateKey = parsed?.privateKey?.trim();
+
+    if (publicKey && privateKey) {
+      return {
+        source: 'VAPID_KEYS (JSON)',
+        publicKey,
+        privateKey
+      };
+    }
+  } catch {
+    const [publicKey, privateKey] = bundled.split(':').map((value) => value?.trim());
+    if (publicKey && privateKey) {
+      return {
+        source: 'VAPID_KEYS (public:private)',
+        publicKey,
+        privateKey
+      };
+    }
+  }
+
+  return null;
+}
+
+const vapid = resolveVapidKeys();
+
+if (!vapid) {
+  console.error('[push] Missing VAPID keys in environment.');
+  console.error('[push] Use either:');
+  console.error('[push] 1) VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY');
+  console.error('[push] 2) VAPID_KEYS as JSON: {"publicKey":"...","privateKey":"..."}');
+  console.error('[push] 3) VAPID_KEYS as public:private');
   console.error('[push] Generate keys with: node scripts/generate-vapid-keys.js');
   process.exit(1);
 }
 
-// Requested behavior: log keys at startup.
-console.log(`[push] VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}`);
-console.log(`[push] VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}`);
+// Requested behavior: always log keys at startup.
+console.log(`[push] VAPID key source: ${vapid.source}`);
+console.log(`[push] VAPID_PUBLIC_KEY=${vapid.publicKey}`);
+console.log(`[push] VAPID_PRIVATE_KEY=${vapid.privateKey}`);
 
-webpush.setVapidDetails(CONTACT_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+webpush.setVapidDetails(CONTACT_EMAIL, vapid.publicKey, vapid.privateKey);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -60,7 +108,7 @@ function subscriptionKey(subscription) {
 
 app.get('/api/config', (_req, res) => {
   res.json({
-    publicVapidKey: VAPID_PUBLIC_KEY,
+    publicVapidKey: vapid.publicKey,
     defaultIntervalMs: DEFAULT_INTERVAL_MS,
     maxSendCount: MAX_SPAM_COUNT
   });
