@@ -4,7 +4,6 @@ A minimal Express + Service Worker project that supports:
 
 - Persistent VAPID keys via environment variables.
 - Background push delivery (works with tab closed/minimized after subscription).
-- Controlled repeated sends (`count`, `intervalMs`) with per-notification random `nonce` + random URL string.
 - Subscription persistence in `subscriptions.json`.
 
 ## Setup
@@ -44,8 +43,6 @@ At startup, the server logs:
 - key source
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
-
-Random URL strings are generated per notification using `RANDOM_URL_BASE` (default: `https://example.local`).
 
 ## Run
 

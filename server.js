@@ -18,7 +18,6 @@ const CONTACT_EMAIL = process.env.VAPID_CONTACT_EMAIL || 'mailto:admin@example.c
 const MAX_SPAM_COUNT = Number(process.env.MAX_SEND_COUNT || 20);
 const DEFAULT_INTERVAL_MS = Number(process.env.DEFAULT_INTERVAL_MS || 1000);
 const subscriptionsPath = path.join(__dirname, 'subscriptions.json');
-const RANDOM_URL_BASE = process.env.RANDOM_URL_BASE || 'https://example.local';
 
 function resolveVapidKeys() {
   const directPublic = process.env.VAPID_PUBLIC_KEY?.trim();
@@ -107,14 +106,6 @@ function subscriptionKey(subscription) {
   return `${subscription.endpoint}|${subscription.keys?.p256dh}|${subscription.keys?.auth}`;
 }
 
-
-function buildRandomUrlString() {
-  const host = RANDOM_URL_BASE.replace(/\/$/, '');
-  const randomPath = crypto.randomBytes(8).toString('hex');
-  const randomQuery = crypto.randomBytes(6).toString('hex');
-  return `${host}/notify/${randomPath}?r=${randomQuery}`;
-}
-
 app.get('/api/config', (_req, res) => {
   res.json({
     publicVapidKey: vapid.publicKey,
@@ -160,7 +151,7 @@ app.post('/api/send', async (req, res) => {
   const sent = [];
   for (let i = 0; i < safeCount; i += 1) {
     const nonce = crypto.randomUUID();
-    const randomUrl = buildRandomUrlString();
+
     const payload = JSON.stringify({
       title,
       body: message,
@@ -168,8 +159,7 @@ app.post('/api/send', async (req, res) => {
       sentAt: new Date().toISOString(),
       index: i + 1,
       total: safeCount,
-      url: randomUrl,
-      randomUrlString: randomUrl
+
     });
 
     // eslint-disable-next-line no-await-in-loop
@@ -177,7 +167,6 @@ app.post('/api/send', async (req, res) => {
       subscriptions.map((subscription) => webpush.sendNotification(subscription, payload))
     );
 
-    sent.push({ index: i + 1, nonce, randomUrl });
 
     if (i < safeCount - 1) {
       // eslint-disable-next-line no-await-in-loop
